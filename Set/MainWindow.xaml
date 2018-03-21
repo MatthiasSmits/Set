@@ -5,21 +5,28 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Set"
         mc:Ignorable="d"
-        Title="Set" Height="680" Width="525">
+        Title="Set" Height="680" Width="536">
     <StackPanel>
-        <Grid Name="Card_Grid">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition/>
-                <ColumnDefinition/>
-                <ColumnDefinition/>
-                <ColumnDefinition/>
-            </Grid.ColumnDefinitions>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="200"/>
-                <RowDefinition Height="200"/>
-                <RowDefinition Height="200"/>
-            </Grid.RowDefinitions>
-        </Grid>
-        <Button Name="Check_Button" Height="40" Content="Check" Click="Check_Button_Click"></Button>
+            <TextBlock Name="ScoreBlock" Text="Score: 0"></TextBlock>
+        <Viewbox Stretch="Uniform">
+            <Grid Name="Card_Grid">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="130"/>
+                    <ColumnDefinition Width="130"/>
+                    <ColumnDefinition Width="130"/>
+                    <ColumnDefinition Width="130"/>
+                    <ColumnDefinition Width="130"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="200"/>
+                    <RowDefinition Height="200"/>
+                    <RowDefinition Height="200"/>
+                </Grid.RowDefinitions>
+            </Grid>
+        </Viewbox>
+        <StackPanel Orientation="Horizontal" Height="40">
+            <Button Name="Add_Col" Content="Add Column" Click="Add_Col_Click" />
+            <Button Name="Check_Button" Content="Check" Click="Check_Button_Click" IsEnabled="False" />
+        </StackPanel>
     </StackPanel>
 </Window>

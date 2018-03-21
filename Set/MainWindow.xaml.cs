@@ -25,11 +25,11 @@ namespace Set
         string[] shapes = { "oval", "diamond", "rectangle" };
         Color[] colors = { Colors.Purple, Colors.Green, Colors.Red };
         double[] fills = {0, 0.5, 1 };
+        int score = 0;
         
         public List<Card> GenerateDeck()
         {
             List<Card> deck = new List<Card>();
-            int id = 0;
             foreach (int n in numbers)
             {
                 foreach (string s in shapes)
@@ -38,9 +38,8 @@ namespace Set
                     {
                         foreach (double f in fills)
                         {
-                            Card card = new Set.Card(n, s, c, f, id);
+                            Card card = new Set.Card(n, s, c, f);
                             deck.Add(card);
-                            id++;
                         }
                     }
                 }
@@ -63,74 +62,81 @@ namespace Set
             }
             return list;
         }
-        public void FillGrid(List<Card> deck)
+        public void FillGrid(List<Card> visibleCards)
         {
+            Card_Grid.Children.Clear();
+            int columns = visibleCards.Count / 3;
             int cardnr = 0;
-            for (int row = 0; row < 3; row++)
+            for (int col = 0; col < columns; col++)
             {
-                for (int col = 0; col < 4; col++)
+                for (int row = 0; row < 3; row++)
                 {
-                    Card c = deck[cardnr];
-                    c.Click += Card_Select;
-                    c.Row = row;
-                    c.Col = col;
+                    Card c = visibleCards[cardnr];
                     Grid.SetRow(c, row);
                     Grid.SetColumn(c, col);
                     Card_Grid.Children.Add(c);
                     cardnr++;
                 }
             }
-            
         }
-        bool EnteredCorrect = false;
         private void Check_Button_Click(object sender, RoutedEventArgs e)
         {
-            if (selectedCards.Count == 3)
+            if (IsSet(selectedCards))
             {
-                EnteredCorrect = IsSet(selectedCards);
-                
-            }
-            if (EnteredCorrect)
-            {
-                if (Deck.Count >= 15)
-                {
-                    foreach (Card c in selectedCards)
-                    {
-                        ReplaceCard(c);
-                        Deck.Remove(c);
-                    }
-                }
-                else
+                score++;
+                ScoreBlock.Text = string.Format("Score: {0}", score);
+                if (Deck.Count == 0)
                 {
                     MessageBox.Show("Winner winner chicken dinner!");
                 }
+                else
+                {
+                    while (VisibleCards.Count < 12)
+                    {
+                        DrawCard();
+                    }
+                    FillGrid(VisibleCards);
+                    selectedCards.Clear();
+                    Check_Button.IsEnabled = false;
+                    Add_Col.IsEnabled = true;
+                }
+            }
+            else
+            {
+                score--;
+                ScoreBlock.Text = string.Format("Score: {0}", score);
+                foreach(Card c in selectedCards)
+                {
+                    c.BorderBrush = Brushes.Black;
+                }
                 selectedCards.Clear();
-                EnteredCorrect = false;
+                Check_Button.IsEnabled = false;
             }
         }
-        private void ReplaceCard(Card c)
-        {
-            int row = c.Row;
-            int col = c.Col;
-            Card newCard = Deck[12];
-            newCard.Click += Card_Select;
-            newCard.Row = row;
-            newCard.Col = col;
-            Grid.SetRow(newCard, row);
-            Grid.SetColumn(newCard, col);
-            Card_Grid.Children.Remove(c);
-            Card_Grid.Children.Add(newCard);
-        }
+
+        List<Card> VisibleCards = new List<Card>();
         public MainWindow()
         {
             InitializeComponent();
             Deck = GenerateDeck();
             Deck = Shuffle(Deck);
-            FillGrid(Deck);
+            for (int i = 0; i < 12; i++)
+            {
+                DrawCard();
+            }
+            FillGrid(VisibleCards);
+        }
+        public void DrawCard()
+        {
+            Card c = Deck[0];
+            c.Click += Card_Select;
+            VisibleCards.Add(c);
+            Deck.Remove(c);
         }
         public List<Card> selectedCards = new List<Card>();
         private void Card_Select(object sender, RoutedEventArgs e)
         {
+            MessageBox.Show("Hi");
             Card c = sender as Card;
             if (!selectedCards.Contains(c))
             {
@@ -148,7 +154,9 @@ namespace Set
                 selectedCards.Remove(c);
                 c.BorderBrush = Brushes.Black;
             }
+            Check_Button.IsEnabled = selectedCards.Count == 3;
         }
+
         public bool IsSet(List<Card> selection)
         {
             bool isSet = true;
@@ -190,23 +198,29 @@ namespace Set
             return isSet;
         }
 
+        private void Add_Col_Click(object sender, RoutedEventArgs e)
+        {
+            Add_Col.IsEnabled = false;
+            for (int i = 0; i < 3; i++)
+            {
+                DrawCard();
+            }
+            FillGrid(VisibleCards);
+            
+        }
     }
     public class Card : Button
     {
-        public int ID;
         public int Number;
         public string Shape;
         public Color Color;
         public double Fill;
-        public int Row;
-        public int Col;
-        public Card(int n, string s, Color c, double f, int id) : base()
+        public Card(int n, string s, Color c, double f) : base()
         {
             Number = n;
             Shape = s;
             Color = c;
             Fill = f;
-            ID = id;
             Content = CardVisual();
             Background = Brushes.White;
             BorderBrush = Brushes.Black;
@@ -218,7 +232,7 @@ namespace Set
             for (int i = 0; i < Number; i++)
             {
                 g.RowDefinitions.Add(new RowDefinition());
-                Shape s = kutding();
+                Shape s = symbol();
                 s.Fill = fillBrush();
                 s.Stroke = strokeBrush();
                 Grid.SetRow(s, i);
@@ -226,7 +240,7 @@ namespace Set
             }
             return g;
         }
-        private Shape kutding()
+        private Shape symbol()
         {
             switch (Shape)
             {
