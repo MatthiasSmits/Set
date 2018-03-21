@@ -91,12 +91,16 @@ namespace Set
                 }
                 else
                 {
+                    foreach (Card c in selectedCards)
+                    {
+                        VisibleCards.Remove(c);
+                    }
+                    selectedCards.Clear();
                     while (VisibleCards.Count < 12)
                     {
                         DrawCard();
                     }
                     FillGrid(VisibleCards);
-                    selectedCards.Clear();
                     Check_Button.IsEnabled = false;
                     Add_Col.IsEnabled = true;
                 }
@@ -136,7 +140,6 @@ namespace Set
         public List<Card> selectedCards = new List<Card>();
         private void Card_Select(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show("Hi");
             Card c = sender as Card;
             if (!selectedCards.Contains(c))
             {
