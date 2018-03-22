@@ -21,22 +21,19 @@ namespace Set
     /// </summary>
     public partial class MainWindow : Window
     {
-        int[]    numbers = { 1, 2, 3 };
-        string[] shapes = { "oval", "diamond", "rectangle" };
-        Color[] colors = { Colors.Purple, Colors.Green, Colors.Red };
-        double[] fills = {0, 0.5, 1 };
+
         int score = 0;
         
         public List<Card> GenerateDeck()
         {
             List<Card> deck = new List<Card>();
-            foreach (int n in numbers)
+            for (int n = 0; n < 3; n++)
             {
-                foreach (string s in shapes)
+                for (int c = 0; c < 3; c++)
                 {
-                    foreach (Color c in colors)
+                    for (int s = 0; s < 3; s++)
                     {
-                        foreach (double f in fills)
+                        for (int f = 0; f < 3; f++)
                         {
                             Card card = new Set.Card(n, s, c, f);
                             deck.Add(card);
@@ -159,44 +156,23 @@ namespace Set
             }
             Check_Button.IsEnabled = selectedCards.Count == 3;
         }
-
         public bool IsSet(List<Card> selection)
         {
             bool isSet = true;
-            Card a = selection[0];
-            Card b = selection[1];
-            Card c = selection[2];
-            if (a.Number == b.Number & b.Number != c.Number) //two the same, but the third is not the same: not a set (AAB)
+            for (int i = 0; i < 4; i++)
             {
-                isSet = false;
-            }
-            if ((a.Number != b.Number & a.Number != c.Number) & b.Number == c.Number) // two are different and the third is different in the same way (ABB)
-            {
-                isSet = false;
-            }
-            if (a.Fill == b.Fill & b.Fill != c.Fill)
-            {
-                isSet = false;
-            }
-            if ((a.Fill != b.Fill & a.Fill != c.Fill) & b.Fill == c.Fill)
-            {
-                isSet = false;
-            }
-            if (a.Color == b.Color & b.Color != c.Color)
-            {
-                isSet = false;
-            }
-            if ((a.Color != b.Color & a.Color != c.Color) & b.Color == c.Color)
-            {
-                isSet = false;
-            }
-            if (a.Shape == b.Shape & b.Shape != c.Shape)
-            {
-                isSet = false;
-            }
-            if ((a.Shape != b.Shape & a.Shape != c.Shape) & b.Shape == c.Shape)
-            {
-                isSet = false;
+                int a = selection[0].Prop[i];
+                int b = selection[1].Prop[i];
+                int c = selection[2].Prop[i];
+
+                if (a == b & b != c) //two the same, but the third is not the same: not a set (AAB)
+                {
+                    isSet = false;
+                }
+                if ((a != b & a != c) & b == c) // two are different and the third is different in the same way (ABB)
+                {
+                    isSet = false;
+                }
             }
             return isSet;
         }
@@ -218,12 +194,18 @@ namespace Set
         public string Shape;
         public Color Color;
         public double Fill;
-        public Card(int n, string s, Color c, double f) : base()
+        public int[] Prop;
+        private int[] numbers = { 1, 2, 3 };
+        private string[] shapes = { "oval", "diamond", "rectangle" };
+        private Color[] colors = { Colors.Purple, Colors.Green, Colors.Red };
+        private double[] fills = { 0, 0.3, 1 };
+        public Card(int n, int s, int c, int f) : base()
         {
-            Number = n;
-            Shape = s;
-            Color = c;
-            Fill = f;
+            Number = numbers[n];
+            Shape = shapes[s];
+            Color = colors[c];
+            Fill = fills[f];
+            Prop = new int[] { n, s, c, f};
             Content = CardVisual();
             Background = Brushes.White;
             BorderBrush = Brushes.Black;
