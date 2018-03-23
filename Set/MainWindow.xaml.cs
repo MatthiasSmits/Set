@@ -196,7 +196,7 @@ namespace Set
         public double Fill;
         public int[] Prop;
         private int[] numbers = { 1, 2, 3 };
-        private string[] shapes = { "oval", "diamond", "rectangle" };
+        private string[] shapes = { "oval", "diamond", "squiggle" };
         private Color[] colors = { Colors.Purple, Colors.Green, Colors.Red };
         private double[] fills = { 0, 0.3, 1 };
         public Card(int n, int s, int c, int f) : base()
@@ -210,27 +210,28 @@ namespace Set
             Background = Brushes.White;
             BorderBrush = Brushes.Black;
         }
-        public Grid CardVisual()
+        public Canvas CardVisual()
         {
-            Grid g = new Grid();
+            Canvas canvas = new Canvas();
             
             for (int i = 0; i < Number; i++)
             {
-                g.RowDefinitions.Add(new RowDefinition());
                 Shape s = symbol();
                 s.Fill = fillBrush();
                 s.Stroke = strokeBrush();
-                Grid.SetRow(s, i);
-                g.Children.Add(s);
+                int topOffset = 0 - 25*Number + 50*i;
+                Canvas.SetTop(s, topOffset);
+                Canvas.SetLeft(s, -40);
+                canvas.Children.Add(s);
             }
-            return g;
+            return canvas;
         }
         private Shape symbol()
         {
             switch (Shape)
             {
                 case "oval":
-                    Ellipse e = new Ellipse {Width = 70, Height = 40, Margin = new Thickness(5) };
+                    Rectangle e = new Rectangle { Width = 70, Height = 40, RadiusX = 20, RadiusY = 20, Margin = new Thickness(5), StrokeThickness = 2 };
                     return e;
                 case "diamond":
                     Point p1 = new Point(0,20);
@@ -238,11 +239,13 @@ namespace Set
                     Point p3 = new Point(70, 20);
                     Point p4 = new Point(35, 0);
                     PointCollection pc = new PointCollection() {p1, p2, p3, p4 };
-                    Polygon d = new Polygon { Points = pc, Width = 70, Height = 40, Margin = new Thickness(5) };
+                    Polygon d = new Polygon { Points = pc, Width = 70, Height = 40, Margin = new Thickness(5), StrokeThickness = 2 };
                     return d;
-                case "rectangle":
-                    Rectangle r = new Rectangle { Width = 70, Height = 40, Margin = new Thickness(5) };
-                    return r;
+                case "squiggle":
+                    string path = "M 0,27 c -1,24 7,-13 32,2.5 24,13 36,5 36,-20 1,-24 -8,9 -32,-5.75 -24,-14.75 -36,0.25 -36,23.25 z";
+                    Geometry g = Geometry.Parse(path);
+                    Path p = new Path { Data = g, Height = 40, Width = 70, Margin = new Thickness(5), StrokeThickness = 2 };
+                    return p;
                 default:
                     return null;
 
