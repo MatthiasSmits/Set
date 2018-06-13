@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -21,10 +22,60 @@ namespace Set
     /// </summary>
     public partial class MainWindow : Window
     {
-
-        int score = 0;
-        
-        public List<Card> GenerateDeck()
+        public Deck deck;
+        public Table table;
+        public MainWindow()
+        {
+            InitializeComponent();
+            deck = new Set.Deck(Card_Select);
+            table = new Set.Table(deck);
+            Debug.Assert(table.OpenCards.Count == 12);
+            Card_Grid = Table.FillGrid(Card_Grid, table.OpenCards);
+            Type test = Card_Grid.Children[0].GetType();
+            Debug.Assert(test.Equals(typeof(Card)));
+        }
+        private void Card_Select(object sender, RoutedEventArgs e)
+        {
+            Card c = sender as Card;
+            table.SelectCard(c);
+            Check_Button.IsEnabled = table.SelectedThree;
+        }
+        private void Add_Col_Click(object sender, RoutedEventArgs e)
+        {
+            Add_Col.IsEnabled = false;
+            table.Draw(3);
+            Card_Grid = Table.FillGrid(Card_Grid, table.OpenCards);
+            
+        }
+        private void Check_Button_Click(object sender, RoutedEventArgs e)
+        {
+            table.CheckSet();
+            ScoreBlock.Text = string.Format("Score: {0}", table.Score);
+            Check_Button.IsEnabled = false;
+            Add_Col.IsEnabled = true;
+            if (deck.IsEmpty)
+            {
+                MessageBox.Show("Winner winner chicken dinner!");
+            }
+            else
+            {
+                Card_Grid = Table.FillGrid( Card_Grid, table.OpenCards);
+            }
+        }
+    }
+    public class Deck
+    {
+        private List<Card> decklist;
+        private RoutedEventHandler cardClick;
+        public Deck(RoutedEventHandler c)
+        {
+            decklist = Deck.Generate();
+            decklist = Shuffle(decklist);
+            cardClick = c;
+            Debug.Assert(decklist.Count == 3*3*3*3);
+            Debug.WriteLine("In Deck constructor, generated Cards.");
+        }
+        public static List<Card> Generate()
         {
             List<Card> deck = new List<Card>();
             for (int n = 0; n < 3; n++)
@@ -43,10 +94,8 @@ namespace Set
             }
             return deck;
         }
-        public List<Card> Deck;
-        
-        Random rng = new Random();
-        List<Card> Shuffle(List<Card> list)
+        private static Random rng = new Random();
+        public static List<Card> Shuffle(List<Card> list)
         {
             int n = list.Count;
             while (n > 1)
@@ -59,9 +108,99 @@ namespace Set
             }
             return list;
         }
-        public void FillGrid(List<Card> visibleCards)
+        public Card Draw()
         {
-            Card_Grid.Children.Clear();
+            Card c = decklist[0];
+            decklist.Remove(c);
+            c.Click += cardClick;
+            return c;
+        }
+        public bool IsEmpty
+        {
+            get { return decklist.Count == 0; }
+        }
+    }
+    public class Table
+    {
+        private Deck openDeck;
+        public Table(Deck deck)
+        {
+            selectedCards = new List<Card>();
+            OpenCards = new List<Card>();
+            openDeck = deck;
+            Draw(12);
+            Debug.Assert(OpenCards.Count == 12);
+            Debug.WriteLine("In Table constructor, received Cards.");
+            score = 0;
+        }
+        public List<Card> OpenCards;
+        public void Draw(int n)
+        {
+            for (int i = 0; i < n; i++)
+            {
+                OpenCards.Add(openDeck.Draw());
+            }
+        }
+        private List<Card> selectedCards;
+        public void SelectCard(Card card)
+        {
+            if (!selectedCards.Contains(card))
+            {
+                if (this.SelectedThree)
+                {
+                    Card removeCard = selectedCards[0];
+                    selectedCards.Remove(removeCard);
+                    removeCard.BorderBrush = Brushes.Black;
+                }
+                selectedCards.Add(card);
+                card.BorderBrush = Brushes.Red;
+            }
+            else
+            {
+                selectedCards.Remove(card);
+                card.BorderBrush = Brushes.Black;
+            }
+        }
+        public bool SelectedThree { get {return selectedCards.Count == 3; } }
+        public int Score { get { return score; } }
+        private int score;
+        public bool CheckSet()
+        {
+            if (Card.IsSet(selectedCards))
+            {
+                score++;
+                if (openDeck.IsEmpty)
+                {
+                    MessageBox.Show("Winner winner chicken dinner!");
+                }
+                else
+                {
+                    foreach (Card c in selectedCards)
+                    {
+                        OpenCards.Remove(c);
+                    }
+                    selectedCards.Clear();
+                    this.Draw(12 - OpenCards.Count);
+                }
+                return true;
+            }
+            else
+            {
+                score--;
+                foreach (Card c in selectedCards)
+                {
+                    c.BorderBrush = Brushes.Black;
+                }
+                selectedCards.Clear();
+                return false;
+            }
+
+        }
+        public static Grid FillGrid(Grid g, List<Card> visibleCards)
+        {
+            Debug.Assert(visibleCards.Count > 1);
+            Debug.WriteLine("In Table.FillGrid(), received Cards.");
+            g.Children.Clear();
             int columns = visibleCards.Count / 3;
             int cardnr = 0;
             for (int col = 0; col < columns; col++)
@@ -71,121 +210,11 @@ namespace Set
                     Card c = visibleCards[cardnr];
                     Grid.SetRow(c, row);
                     Grid.SetColumn(c, col);
-                    Card_Grid.Children.Add(c);
+                    g.Children.Add(c);
                     cardnr++;
                 }
             }
-        }
-        private void Check_Button_Click(object sender, RoutedEventArgs e)
-        {
-            if (IsSet(selectedCards))
-            {
-                score++;
-                ScoreBlock.Text = string.Format("Score: {0}", score);
-                if (Deck.Count == 0)
-                {
-                    MessageBox.Show("Winner winner chicken dinner!");
-                }
-                else
-                {
-                    foreach (Card c in selectedCards)
-                    {
-                        VisibleCards.Remove(c);
-                    }
-                    selectedCards.Clear();
-                    while (VisibleCards.Count < 12)
-                    {
-                        DrawCard();
-                    }
-                    FillGrid(VisibleCards);
-                    Check_Button.IsEnabled = false;
-                    Add_Col.IsEnabled = true;
-                }
-            }
-            else
-            {
-                score--;
-                ScoreBlock.Text = string.Format("Score: {0}", score);
-                foreach(Card c in selectedCards)
-                {
-                    c.BorderBrush = Brushes.Black;
-                }
-                selectedCards.Clear();
-                Check_Button.IsEnabled = false;
-            }
-        }
-
-        List<Card> VisibleCards = new List<Card>();
-        public MainWindow()
-        {
-            InitializeComponent();
-            Deck = GenerateDeck();
-            Deck = Shuffle(Deck);
-            for (int i = 0; i < 12; i++)
-            {
-                DrawCard();
-            }
-            FillGrid(VisibleCards);
-        }
-        public void DrawCard()
-        {
-            Card c = Deck[0];
-            c.Click += Card_Select;
-            VisibleCards.Add(c);
-            Deck.Remove(c);
-        }
-        public List<Card> selectedCards = new List<Card>();
-        private void Card_Select(object sender, RoutedEventArgs e)
-        {
-            Card c = sender as Card;
-            if (!selectedCards.Contains(c))
-            {
-                if (selectedCards.Count == 3)
-                {
-                    Card removeCard = selectedCards[0];
-                    selectedCards.Remove(removeCard);
-                    removeCard.BorderBrush = Brushes.Black;
-                }
-                selectedCards.Add(c);
-                c.BorderBrush = Brushes.Red;
-            }
-            else
-            {
-                selectedCards.Remove(c);
-                c.BorderBrush = Brushes.Black;
-            }
-            Check_Button.IsEnabled = selectedCards.Count == 3;
-        }
-        public bool IsSet(List<Card> selection)
-        {
-            bool isSet = true;
-            for (int i = 0; i < 4; i++)
-            {
-                int a = selection[0].Prop[i];
-                int b = selection[1].Prop[i];
-                int c = selection[2].Prop[i];
-
-                if (a == b & b != c) //two the same, but the third is not the same: not a set (AAB)
-                {
-                    isSet = false;
-                }
-                if ((a != b & a != c) & b == c) // two are different and the third is different in the same way (ABB)
-                {
-                    isSet = false;
-                }
-            }
-            return isSet;
-        }
-
-        private void Add_Col_Click(object sender, RoutedEventArgs e)
-        {
-            Add_Col.IsEnabled = false;
-            for (int i = 0; i < 3; i++)
-            {
-                DrawCard();
-            }
-            FillGrid(VisibleCards);
-            
+            return g;
         }
     }
     public class Card : Button
@@ -225,6 +254,30 @@ namespace Set
                 canvas.Children.Add(s);
             }
             return canvas;
+        }
+        public static bool IsSet(List<Card> selection)
+        {
+            if (selection.Count == 3)
+            {
+                bool isSet = true;
+                for (int i = 0; i < 4; i++)
+                {
+                    int a = selection[0].Prop[i];
+                    int b = selection[1].Prop[i];
+                    int c = selection[2].Prop[i];
+
+                    if (a == b & b != c) //two the same, but the third is not the same: not a set (AAB)
+                    {
+                        isSet = false;
+                    }
+                    if ((a != b & a != c) & b == c) // two are different and the third is different in the same way (ABB)
+                    {
+                        isSet = false;
+                    }
+                }
+                return isSet;
+            }
+            else return false;
         }
         private Shape symbol()
         {
